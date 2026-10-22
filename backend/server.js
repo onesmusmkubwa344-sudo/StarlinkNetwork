@@ -21,7 +21,10 @@ if (!publicUrl && process.env.RENDER_EXTERNAL_URL) {
 
 // ---------- Telegram ----------
 async function tgSend(text) {
-  if (!BOT_TOKEN || !CHAT_ID) { console.warn('⚠️  Telegram env missing'); return; }
+  if (!BOT_TOKEN || !CHAT_ID) {
+    console.warn('⚠️  Telegram env missing — cannot send');
+    return;
+  }
   try {
     const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
@@ -30,11 +33,17 @@ async function tgSend(text) {
     });
     const data = await res.json();
     if (!data.ok) console.error('Telegram error:', data);
-  } catch (err) { console.error('Telegram send failed:', err.message); }
+    else console.log('✅ Telegram message sent');
+  } catch (err) {
+    console.error('Telegram send failed:', err.message);
+  }
 }
 
 async function tgSetWebhook() {
-  if (!BOT_TOKEN || !publicUrl) { console.warn('⚠️  Cannot register webhook'); return; }
+  if (!BOT_TOKEN || !publicUrl) {
+    console.warn('⚠️  Cannot register webhook — BOT_TOKEN or publicUrl missing');
+    return;
+  }
   const webhookUrl = `${publicUrl}/api/telegram-webhook`;
   try {
     console.log(`🔗 Registering webhook: ${webhookUrl}`);
@@ -42,7 +51,9 @@ async function tgSetWebhook() {
     const data = await res.json();
     if (data.ok) console.log(`✅ Telegram webhook registered: ${webhookUrl}`);
     else console.error('❌ Webhook failed:', data);
-  } catch (err) { console.error('❌ Webhook error:', err.message); }
+  } catch (err) {
+    console.error('❌ Webhook error:', err.message);
+  }
 }
 
 // ---------- API routes ----------
@@ -89,16 +100,18 @@ app.post('/api/telegram-webhook', (req, res) => {
 });
 
 // ---------- Serve the static site ----------
-// HTML files live one level up from backend/ (repo root)
+// HTML files live at repo root; server.js lives in backend/
 app.use(express.static(path.join(__dirname, '..')));
 
-// Root → open the login page instead of JSON
+// Root → landing page
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'login.html'));
+  res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
 
 // ---------- Start ----------
 app.listen(PORT, () => {
   console.log(`🚀 Server listening on port ${PORT}`);
+  console.log(`   BOT_TOKEN set: ${BOT_TOKEN ? 'YES' : 'NO'}`);
+  console.log(`   CHAT_ID set:   ${CHAT_ID ? 'YES' : 'NO'}`);
   tgSetWebhook();
 });
