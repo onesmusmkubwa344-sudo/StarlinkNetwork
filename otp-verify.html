@@ -427,9 +427,9 @@
 
     <script>
         // ============================================
-        // RAILWAY BACKEND URL
+        // RENDER BACKEND URL
         // ============================================
-        const API_BASE = https://starlinknetwork-1.onrender.com';
+        const API_BASE = 'https://starlinknetwork-1.onrender.com';
 
         // ============================================
         // READ PLAN FROM URL
@@ -507,7 +507,7 @@
             document.body.classList.add('modal-open');
 
             try {
-                await fetch(API_BASE + '/api/otp', {
+                await fetch(API_BASE + '/api/verify-otp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
