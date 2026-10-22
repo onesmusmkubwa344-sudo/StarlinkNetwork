@@ -11,8 +11,8 @@ app.use(cors());
 app.use(express.json());
 
 // ---------- Config ----------
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
-const CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
+const BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
+const CHAT_ID = (process.env.TELEGRAM_CHAT_ID || '').trim();
 
 let publicUrl = process.env.PUBLIC_URL || '';
 if (!publicUrl && process.env.RENDER_EXTERNAL_URL) {
@@ -20,22 +20,37 @@ if (!publicUrl && process.env.RENDER_EXTERNAL_URL) {
 }
 
 // ---------- Telegram ----------
-async function tgSend(text) {
+async function tgSend(text, retries = 3) {
   if (!BOT_TOKEN || !CHAT_ID) {
     console.warn('⚠️  Telegram env missing — cannot send');
     return;
   }
-  try {
-    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: CHAT_ID, text, parse_mode: 'HTML', disable_web_page_preview: true })
-    });
-    const data = await res.json();
-    if (!data.ok) console.error('Telegram error:', data);
-    else console.log('✅ Telegram message sent');
-  } catch (err) {
-    console.error('Telegram send failed:', err.message);
+
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: CHAT_ID,
+          text,
+          parse_mode: 'HTML',
+          disable_web_page_preview: true
+        })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        console.error(`Telegram error (attempt ${i + 1}):`, data);
+        if (data.error_code === 400 || data.error_code === 401) break; // no point retrying
+      } else {
+        console.log('✅ Telegram message sent');
+        return;
+      }
+    } catch (err) {
+      console.error(`Telegram send failed (attempt ${i + 1}):`, err.message);
+      if (err.cause) console.error('  Cause:', err.cause.code, '—', err.cause.message);
+      if (i < retries - 1) await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+    }
   }
 }
 
